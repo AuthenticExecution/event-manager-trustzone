@@ -433,6 +433,12 @@ static void handle_remote_connection(Connection* connection,
 
 void reactive_handle_output(uint16_t conn_id, unsigned char* encrypt, uint32_t size, unsigned char *tag)
 {
+    struct timeval start;
+
+      gettimeofday(&start, NULL);
+      printf("EM_handle_output: %ld.%06ld\n", (long int)start.tv_sec, 
+                              (long int)start.tv_usec);
+
   Connection* connection = connections_get(conn_id);
 
   if (is_local_connection(connection))
