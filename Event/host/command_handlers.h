@@ -7,7 +7,8 @@ typedef enum
 {
     Entrypoint_SetKey                = 0x0,
     Entrypoint_Attest                = 0x1,
-    Entrypoint_HandleInput           = 0x2
+    Entrypoint_Exit                  = 0x2,
+    Entrypoint_HandleInput           = 0x3
     
 } Entrypoint;
 

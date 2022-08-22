@@ -274,6 +274,51 @@ ResultMessage handle_attest(unsigned char* buf, uint16_t module_id) {
   return res;
 }
 
+ResultMessage handle_exit(unsigned char* buf, uint16_t module_id) {
+
+  UUID* uuid_struct = uuid_get(module_id);
+  TEEC_Result rc;
+  uint32_t err_origin;
+  unsigned char* nonce;
+  unsigned char* mac;
+
+  
+//----------------------------------------------------------------------------------
+  
+  //nonce in buf+4, mac in  buf+6
+  nonce = malloc(2);
+  memcpy(nonce, buf+4, 2);
+  mac = malloc(16);
+  memcpy(mac, buf+6, 16);
+
+//-----------------------------^^^^^^^^^&&&&&&&&^^^^^^^^^^-------------------------
+  TA_CTX* ta_ctx = ta_ctx_get(uuid_struct->uuid);
+//-----------------------------------------------------------------
+  memset(&ta_ctx->op, 0, sizeof(ta_ctx->op));
+	ta_ctx->op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
+					 TEEC_MEMREF_TEMP_INPUT,
+					 TEEC_NONE, TEEC_NONE);
+	ta_ctx->op.params[0].tmpref.buffer = nonce;
+	ta_ctx->op.params[0].tmpref.size = 2;
+	ta_ctx->op.params[1].tmpref.buffer = mac;
+	ta_ctx->op.params[1].tmpref.size = 16;
+
+  TEEC_Session temp_sess;
+  TEEC_Context temp_ctx;
+  temp_ctx.fd = ta_ctx->ctx.fd;
+  temp_ctx.reg_mem = ta_ctx->ctx.reg_mem;
+  temp_ctx.memref_null = ta_ctx->ctx.memref_null;
+  
+  temp_sess.session_id = ta_ctx->sess.session_id;
+  temp_sess.ctx = &temp_ctx;
+
+  rc = TEEC_InvokeCommand(&temp_sess, 2, &ta_ctx->op, &err_origin);
+  check_rc(rc, "TEEC_InvokeCommand", &err_origin);
+ 
+  ResultMessage res = RESULT_DATA(ResultCode_Ok);
+  return res;
+}
+
 ResultMessage handle_user_entrypoint(unsigned char* buf, uint32_t size, uint16_t module_id) {
 
   UUID* uuid_struct = uuid_get(module_id);

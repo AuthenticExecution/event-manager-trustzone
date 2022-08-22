@@ -85,6 +85,9 @@ ResultMessage handler_call_entrypoint(CommandMessage m) {
     case Entrypoint_SetKey:
       res = handle_set_key(m->message->payload, module_id);
       break;
+    case Entrypoint_Exit:
+      res = handle_exit(m->message->payload, module_id);
+      break;
     default:
       res = handle_user_entrypoint(m->message->payload, data_len, module_id);
   }
