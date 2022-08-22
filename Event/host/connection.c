@@ -39,3 +39,19 @@ Connection* connections_get(uint16_t conn_id)
 
     return NULL;
 }
+
+int connections_replace(Connection* connection)
+{
+    Node* current = connections_head;
+
+    while (current != NULL) {
+        if (connection->conn_id == current->connection.conn_id) {
+            current->connection = *connection;
+            return 1;
+        }
+
+        current = current->next;
+    }
+
+    return 0;
+}

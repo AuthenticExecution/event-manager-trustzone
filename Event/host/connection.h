@@ -24,5 +24,8 @@ int connections_add(Connection* connection);
 // We keep ownership of the returned Connection. May return NULL.
 Connection* connections_get(uint16_t conn_id);
 
+// Replaces an existing connection
+int connections_replace(Connection* connection);
+
 
 #endif
