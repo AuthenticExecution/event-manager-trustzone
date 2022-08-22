@@ -220,7 +220,7 @@ ResultMessage handle_set_key(unsigned char* buf, uint16_t module_id) {
   temp_sess.session_id = ta_ctx->sess.session_id;
   temp_sess.ctx = &temp_ctx;
 
-  rc = TEEC_InvokeCommand(&temp_sess, 0, &ta_ctx->op, &err_origin);
+  rc = TEEC_InvokeCommand(&temp_sess, Entrypoint_SetKey, &ta_ctx->op, &err_origin);
   check_rc(rc, "TEEC_InvokeCommand", &err_origin);
 
 // everything went good
@@ -265,7 +265,7 @@ ResultMessage handle_attest(unsigned char* buf, uint16_t module_id) {
   temp_sess.session_id = ta_ctx->sess.session_id;
   temp_sess.ctx = &temp_ctx;
 
-  rc = TEEC_InvokeCommand(&temp_sess, 1, &ta_ctx->op, &err_origin);
+  rc = TEEC_InvokeCommand(&temp_sess, Entrypoint_Attest, &ta_ctx->op, &err_origin);
   check_rc(rc, "TEEC_InvokeCommand", &err_origin);
  
 // everything went good
@@ -312,7 +312,7 @@ ResultMessage handle_exit(unsigned char* buf, uint16_t module_id) {
   temp_sess.session_id = ta_ctx->sess.session_id;
   temp_sess.ctx = &temp_ctx;
 
-  rc = TEEC_InvokeCommand(&temp_sess, 2, &ta_ctx->op, &err_origin);
+  rc = TEEC_InvokeCommand(&temp_sess, Entrypoint_Exit, &ta_ctx->op, &err_origin);
   check_rc(rc, "TEEC_InvokeCommand", &err_origin);
  
   ResultMessage res = RESULT(ResultCode_Ok);
@@ -365,7 +365,7 @@ ResultMessage handle_user_entrypoint(unsigned char* buf, uint32_t size, uint16_t
   temp_sess1.session_id = ctx1->sess.session_id;
   temp_sess1.ctx = &temp_ctx1;
 
-  rc = TEEC_InvokeCommand(&temp_sess1, 3, &ctx1->op, &err_origin);
+  rc = TEEC_InvokeCommand(&temp_sess1, Entrypoint_User, &ctx1->op, &err_origin);
   check_rc(rc, "TEEC_InvokeCommand", &err_origin);
 
   if (rc == TEEC_SUCCESS) {
@@ -531,7 +531,7 @@ void reactive_handle_input(uint16_t sm, conn_index conn_id,
   temp_sess.session_id = ta_ctx->sess.session_id;
   temp_sess.ctx = &temp_ctx;
 
-  rc = TEEC_InvokeCommand(&temp_sess, 2, &ta_ctx->op, &err_origin);
+  rc = TEEC_InvokeCommand(&temp_sess, Entrypoint_HandleInput, &ta_ctx->op, &err_origin);
   check_rc(rc, "TEEC_InvokeCommand", &err_origin);
 
   if (rc == TEEC_SUCCESS) {
