@@ -315,7 +315,7 @@ ResultMessage handle_exit(unsigned char* buf, uint16_t module_id) {
   rc = TEEC_InvokeCommand(&temp_sess, 2, &ta_ctx->op, &err_origin);
   check_rc(rc, "TEEC_InvokeCommand", &err_origin);
  
-  ResultMessage res = RESULT_DATA(ResultCode_Ok);
+  ResultMessage res = RESULT(ResultCode_Ok);
   return res;
 }
 
