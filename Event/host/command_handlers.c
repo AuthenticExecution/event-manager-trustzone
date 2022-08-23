@@ -53,7 +53,7 @@ ResultMessage handler_add_connection(CommandMessage m) {
 
   destroy_command_message(m);
 
-  if (!connections_replace(&connection) || !connections_add(&connection))
+  if (!connections_replace(&connection) && !connections_add(&connection))
      return RESULT(ResultCode_InternalError);
 
   return RESULT(ResultCode_Ok);
