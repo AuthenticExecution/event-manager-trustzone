@@ -74,14 +74,6 @@ TA_CTX* ta_ctx_get(TEEC_UUID uuid)
     return NULL;
 }
 //---------------------------------------------------------------------------------------
-void check_rc (TEEC_Result rc, const char *errmsg, uint32_t *orig) {
-   if (rc != TEEC_SUCCESS) {
-      if (orig)
-      fprintf(stderr, " (orig=%d)", (int)*orig);
-      exit(1);
-   }
-}
-
 TEEC_UUID calculate_uuid (unsigned char* buf){
 
   UUID uuid_struct;
@@ -166,11 +158,15 @@ ResultMessage load_enclave(unsigned char* buf, uint32_t size) {
 
 /* Initialize a context connecting us to the TEE */
   rc = TEEC_InitializeContext(NULL, &ctx.ctx);
-  check_rc(rc, "TEEC_InitializeContext", NULL);
+  if(rc != TEEC_SUCCESS) {
+    return RESULT(ResultCode_InternalError);
+  }
 
 // open a session to the TA
   rc = TEEC_OpenSession(&ctx.ctx, &ctx.sess, &ctx.uuid, TEEC_LOGIN_PUBLIC, NULL, NULL, &err_origin);
-  check_rc(rc, "TEEC_OpenSession", &err_origin);
+  if(rc != TEEC_SUCCESS) {
+    return RESULT(ResultCode_InternalError);
+  }
 
 //-----------------------------^^^^^^^^^&&&&&&&&^^^^^^^^^^----------
   ta_ctx_add(&ctx);
@@ -221,14 +217,16 @@ ResultMessage handle_set_key(unsigned char* buf, uint16_t module_id) {
   temp_sess.ctx = &temp_ctx;
 
   rc = TEEC_InvokeCommand(&temp_sess, Entrypoint_SetKey, &ta_ctx->op, &err_origin);
-  check_rc(rc, "TEEC_InvokeCommand", &err_origin);
 
-// everything went good
-  ResultMessage res = RESULT(ResultCode_Ok);
   free(ad);
   free(cipher);
   free(tag);
-  return res;
+
+  if(rc != TEEC_SUCCESS) {
+    return RESULT(ResultCode_InternalError);
+  }
+
+  return RESULT(ResultCode_Ok);
 }
 
 ResultMessage handle_attest(unsigned char* buf, uint16_t module_id) {
@@ -266,12 +264,13 @@ ResultMessage handle_attest(unsigned char* buf, uint16_t module_id) {
   temp_sess.ctx = &temp_ctx;
 
   rc = TEEC_InvokeCommand(&temp_sess, Entrypoint_Attest, &ta_ctx->op, &err_origin);
-  check_rc(rc, "TEEC_InvokeCommand", &err_origin);
+  free(challenge);
+
+  if(rc != TEEC_SUCCESS) {
+    return RESULT(ResultCode_InternalError);
+  }
  
-// everything went good
-  uint32_t size =  16;
-  ResultMessage res = RESULT_DATA(ResultCode_Ok, size, challenge_mac);
-  return res;
+  return RESULT_DATA(ResultCode_Ok, 16, challenge_mac);
 }
 
 ResultMessage handle_disable(unsigned char* buf, uint16_t module_id) {
@@ -318,10 +317,16 @@ ResultMessage handle_disable(unsigned char* buf, uint16_t module_id) {
   temp_sess.ctx = &temp_ctx;
 
   rc = TEEC_InvokeCommand(&temp_sess, Entrypoint_Disable, &ta_ctx->op, &err_origin);
-  check_rc(rc, "TEEC_InvokeCommand", &err_origin);
+
+  free(nonce);
+  free(cipher);
+  free(mac);
+
+  if(rc != TEEC_SUCCESS) {
+    return RESULT(ResultCode_InternalError);
+  }
  
-  ResultMessage res = RESULT(ResultCode_Ok);
-  return res;
+  return RESULT(ResultCode_Ok);
 }
 
 ResultMessage handle_user_entrypoint(unsigned char* buf, uint32_t size, uint16_t module_id) {
@@ -371,9 +376,8 @@ ResultMessage handle_user_entrypoint(unsigned char* buf, uint32_t size, uint16_t
   temp_sess1.ctx = &temp_ctx1;
 
   rc = TEEC_InvokeCommand(&temp_sess1, Entrypoint_User, &ctx1->op, &err_origin);
-  check_rc(rc, "TEEC_InvokeCommand", &err_origin);
 
-  if (rc == TEEC_SUCCESS) {
+  if(rc == TEEC_SUCCESS) {
     int index = 0;
     for(int i = 0; i < ctx1->op.params[0].value.b; i++) {
 
@@ -400,12 +404,17 @@ ResultMessage handle_user_entrypoint(unsigned char* buf, uint32_t size, uint16_t
       free(handle_tag);
     }
   }
+  
   // *************************************************
-  ResultMessage res = RESULT(ResultCode_Ok);
   free(conn_id_buf);
   free(encrypt_buf);
   free(tag_buf);
-  return res;
+
+  if(rc != TEEC_SUCCESS) {
+    return RESULT(ResultCode_InternalError);
+  }
+
+  return RESULT(ResultCode_Ok);
 }
 
 static int is_local_connection(Connection* connection) {
@@ -439,7 +448,7 @@ static void handle_remote_connection(Connection* connection,
     sockfd = socket(AF_INET, SOCK_STREAM, 0); 
     if (sockfd == -1) { 
         printf("socket creation failed...\n"); 
-        exit(0); 
+        return;
     } 
     else
         printf("Socket successfully created..\n"); 
@@ -453,7 +462,7 @@ static void handle_remote_connection(Connection* connection,
     if (connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) != 0) { 
         printf("connection with the server failed...\n"); 
 		    perror("connect");
-        exit(0); 
+        return;
     } 
     else
         printf("connected to the server..\n"); 
@@ -537,7 +546,6 @@ void reactive_handle_input(uint16_t sm, conn_index conn_id,
   temp_sess.ctx = &temp_ctx;
 
   rc = TEEC_InvokeCommand(&temp_sess, Entrypoint_HandleInput, &ta_ctx->op, &err_origin);
-  check_rc(rc, "TEEC_InvokeCommand", &err_origin);
 
   if (rc == TEEC_SUCCESS) {
     int index = 0;
@@ -570,5 +578,4 @@ void reactive_handle_input(uint16_t sm, conn_index conn_id,
   free(conn_id_buf);
   free(encrypt_buf);
   free(tag_buf);
-
 }

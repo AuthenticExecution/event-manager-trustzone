@@ -380,8 +380,8 @@ Message read_message(void) {
   else {
     buf = malloc_aligned(size * sizeof(unsigned char));
     if(buf == NULL) {
-      //LOG_ERROR("OOM\n");
-      exit(-1);
+      printf("read_message malloc ERROR!");
+      return NULL;
     }
 
     read_buf_ack(buf, size, 1);
@@ -420,8 +420,8 @@ ResultMessage read_result_message(void) {
   Header header = u8_to_header(h);
 
   if (header != Header_Result) {
-    //LOG_ERROR("Wrong header");
-    exit(-1); // all the other bytes will be garbage, we can't continue execution
+    printf("read_result_message ERROR! Wrong header");
+    return NULL; // all the other bytes will be garbage, we can't continue execution
   }
 
   uint8_t code = read_byte();
@@ -465,8 +465,8 @@ CommandMessage read_command_message(void) {
   Header header = u8_to_header(h);
 
   if (header != Header_Command) {
-    //LOG_ERROR("Wrong header");
-    exit(-1); // all the other bytes will be garbage, we can't continue execution
+    printf("read_command_message ERROR! Wrong header");
+    return NULL; // all the other bytes will be garbage, we can't continue execution
   }
 
   uint8_t code = read_byte();
