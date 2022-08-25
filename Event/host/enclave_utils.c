@@ -280,16 +280,19 @@ ResultMessage handle_disable(unsigned char* buf, uint16_t module_id) {
   TEEC_Result rc;
   uint32_t err_origin;
   unsigned char* nonce;
+  unsigned char* cipher;
   unsigned char* mac;
 
   
 //----------------------------------------------------------------------------------
   
-  //nonce in buf+4, mac in  buf+6
+  //nonce in buf+4, cipher in buf+6, mac in  buf+8
   nonce = malloc(2);
   memcpy(nonce, buf+4, 2);
+  cipher = malloc(2);
+  memcpy(cipher, buf+6, 2);
   mac = malloc(16);
-  memcpy(mac, buf+6, 16);
+  memcpy(mac, buf+8, 16);
 
 //-----------------------------^^^^^^^^^&&&&&&&&^^^^^^^^^^-------------------------
   TA_CTX* ta_ctx = ta_ctx_get(uuid_struct->uuid);
@@ -297,11 +300,13 @@ ResultMessage handle_disable(unsigned char* buf, uint16_t module_id) {
   memset(&ta_ctx->op, 0, sizeof(ta_ctx->op));
 	ta_ctx->op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
 					 TEEC_MEMREF_TEMP_INPUT,
-					 TEEC_NONE, TEEC_NONE);
+					 TEEC_MEMREF_TEMP_INPUT, TEEC_NONE);
 	ta_ctx->op.params[0].tmpref.buffer = nonce;
 	ta_ctx->op.params[0].tmpref.size = 2;
-	ta_ctx->op.params[1].tmpref.buffer = mac;
-	ta_ctx->op.params[1].tmpref.size = 16;
+	ta_ctx->op.params[1].tmpref.buffer = cipher;
+	ta_ctx->op.params[1].tmpref.size = 2;
+	ta_ctx->op.params[2].tmpref.buffer = mac;
+	ta_ctx->op.params[2].tmpref.size = 16;
 
   TEEC_Session temp_sess;
   TEEC_Context temp_ctx;
