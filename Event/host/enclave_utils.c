@@ -274,7 +274,7 @@ ResultMessage handle_attest(unsigned char* buf, uint16_t module_id) {
   return res;
 }
 
-ResultMessage handle_exit(unsigned char* buf, uint16_t module_id) {
+ResultMessage handle_disable(unsigned char* buf, uint16_t module_id) {
 
   UUID* uuid_struct = uuid_get(module_id);
   TEEC_Result rc;
@@ -312,7 +312,7 @@ ResultMessage handle_exit(unsigned char* buf, uint16_t module_id) {
   temp_sess.session_id = ta_ctx->sess.session_id;
   temp_sess.ctx = &temp_ctx;
 
-  rc = TEEC_InvokeCommand(&temp_sess, Entrypoint_Exit, &ta_ctx->op, &err_origin);
+  rc = TEEC_InvokeCommand(&temp_sess, Entrypoint_Disable, &ta_ctx->op, &err_origin);
   check_rc(rc, "TEEC_InvokeCommand", &err_origin);
  
   ResultMessage res = RESULT(ResultCode_Ok);
