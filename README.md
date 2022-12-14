@@ -33,3 +33,18 @@ make run PORT=<port> OPTEE_DIR=<volume>
 ```
 
 The container automatically runs the Event Manager at startup.
+
+## Troubleshooting
+
+### OPTEE installation fails
+
+- Be sure to install all
+  [prerequisites](https://optee.readthedocs.io/en/latest/building/gits/build.html#get-and-build-the-solution)
+- If you get an error like `ModuleNotFoundError: No module named 'Cryptodome'`,
+  run `sudo apt install python3-pycryptodome` and try again
+
+### Container starts but there is no output
+
+This is probably due to OP-TEE not being correctly installed into the host.
+Ensure OPTEE is correctly installed and mounted to the container
+`OPTEE_DIR=<path_to_optee>`, then try again.

@@ -10,6 +10,7 @@ LOGS        = "/opt/optee/logs"
 
 
 async def main():
+    print("Starting QEMU with OPTEE")
     os.chdir(BUILD)
 
     log_file = "{}/log_{}.txt".format(LOGS, os.environ['PORT'])
