@@ -5,6 +5,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <signal.h>
 
 #include "logging.h"
 #include "networking.h"
@@ -12,6 +13,10 @@
 
 #define DEFAULT_PORT 1236
 #define BACKLOG 5
+
+void sig_handler(int signum){
+    WARNING("Client disconnected");
+}
 
 // TODO check arguments of functions and variables
 
@@ -28,6 +33,9 @@ int main(int argc, char const* argv[])
     } else {
         port = DEFAULT_PORT;
     }
+
+    // Register signal handler in case client disconnects
+    signal(SIGPIPE, sig_handler);
 
 	// Creating socket file descriptor
 	if((server_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
