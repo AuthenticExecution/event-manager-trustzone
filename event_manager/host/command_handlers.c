@@ -7,6 +7,7 @@
 #include "connection.h"
 #include "utils.h"
 #include "logging.h"
+#include "enclave_utils.h"
 
 ResultMessage handler_add_connection(CommandMessage m) {
   DEBUG("Received add connection");
@@ -64,10 +65,7 @@ ResultMessage handler_call_entrypoint(CommandMessage m) {
 
   DEBUG("id: %d, index: %d", id, index);
 
-  //TODO
-    ResultMessage res = RESULT(ResultCode_InternalError);
-
-  /*
+  ResultMessage res;
 
   switch(index) {
     case Entrypoint_SetKey:
@@ -81,7 +79,6 @@ ResultMessage handler_call_entrypoint(CommandMessage m) {
     default:
       res = handle_user_entrypoint(id, index, state);
   }
-  */
 
   free_parse_state(state);
   destroy_command_message(m);
@@ -109,8 +106,7 @@ ResultMessage handler_remote_output(CommandMessage m) {
 
   DEBUG("id: %d, conn_id: %d, payload_size: %lu", sm, conn_id, payload_len);
 
-  //TODO handle input
-  //reactive_handle_input(sm, conn_id, payload, payload_len);
+  reactive_handle_input(sm, conn_id, payload, payload_len);
 
   free_parse_state(state);
   destroy_command_message(m);
@@ -120,13 +116,7 @@ ResultMessage handler_remote_output(CommandMessage m) {
 
 ResultMessage handler_load_sm(CommandMessage m) {
   DEBUG("Received new module");
-
-  // TODO load
-  ResultMessage res = RESULT(ResultCode_InternalError);
-  //ResultMessage res = load_enclave(m);
-  // m is destroyed inside load_enclave
-
-  //TODO remove this destroy (if it's destroyed elsewhere)
+  ResultMessage res = load_enclave(m);
   destroy_command_message(m);
   return res;
 }
