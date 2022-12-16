@@ -9,6 +9,7 @@
 #include "logging.h"
 #include "command_handlers.h"
 #include "connection.h"
+#include "tee_client_api.h"
 
 #define SECURITY_BYTES 16
 
