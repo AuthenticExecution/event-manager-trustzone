@@ -8,6 +8,7 @@
 
 #include "logging.h"
 #include "networking.h"
+#include "event_manager.h"
 
 #define DEFAULT_PORT 1236
 #define BACKLOG 5
@@ -87,7 +88,13 @@ int main(int argc, char const* argv[])
             ERROR("Failed to read command");
         } else {
             INFO("Read cmd. ID: %d buf size: %lu", m->code, m->message->size);
-            destroy_command_message(m);
+            ResultMessage res = process_message(m);
+
+            if(res != NULL) {
+                DEBUG("Result code: %d, size: %lu", res->code, res->message->size);
+                write_result_message(client_socket, res);
+                destroy_result_message(res);
+            }
         }
 
         // closing the connected socket

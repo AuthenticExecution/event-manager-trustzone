@@ -219,7 +219,7 @@ int write_byte(int fd, unsigned char b) {
 int read_buf(int fd, unsigned char* buf, size_t size) {
   size_t total_read = 0;
 
-  DEBUG("Reading buf with size: %lu", size);
+  //DEBUG("Reading buf with size: %lu", size);
 
   while(1) {
     size_t nread = read(fd, buf + total_read, size - total_read);
@@ -230,7 +230,7 @@ int read_buf(int fd, unsigned char* buf, size_t size) {
     }
 
     total_read += nread;
-    DEBUG("Read %lu bytes. %lu to go", nread, size - total_read);
+    //DEBUG("Read %lu bytes. %lu to go", nread, size - total_read);
 
     if(total_read > size) {
       WARNING("Read more than expected: %lu/%lu", total_read, size);
@@ -387,7 +387,7 @@ CommandMessage read_command_message(int fd) {
   CommandCode command_code = u8_to_command_code(code);
 
   if(command_code == CommandCode_LoadSM) {
-    DEBUG("Reading LoadSM message");
+    //DEBUG("Reading LoadSM message");
     uint32_t size_u32;
     if(read_u32(fd, &size_u32) == NETWORK_FAILURE) return NULL;
 
