@@ -12,13 +12,26 @@ typedef struct {
     uint16_t module_id;
 } ModuleContext;
 
-// functions to manage this data structure (internal linked list used)
+typedef enum {
+    ModuleCallResult_Ok,
+    ModuleCallResult_GenericError
+} ModuleCallResult;
+
+/* Functions for managing internal linked list */
+
+// Generic functions
+int initialize_context(ModuleContext *ctx, unsigned char* buf, size_t size);
 int add_module(ModuleContext *ta_ctx);
-ModuleContext *get_module_from_uuid(TEEC_UUID uuid);
 ModuleContext *get_module_from_id(uint16_t id);
-ModuleContext initialize_context(unsigned char* buf);
 
-// functions for interfacing with TAs
+// Platform-specific functions
+//TODO check if this can be removed
+ModuleContext *get_module_from_uuid(TEEC_UUID uuid);
 
+
+/* API for interfacing with modules */
+
+// Generic functions
+ModuleCallResult load_module(unsigned char* buf, size_t size);
 
 #endif
