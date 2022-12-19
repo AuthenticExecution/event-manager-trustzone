@@ -11,8 +11,6 @@
 #include "connection.h"
 #include "module.h"
 
-#define SECURITY_BYTES 16
-
 /* store the conn_idx ids associated to a connection ID. conn_idx is an index
  * used internally by each SM, which is returned by set_key.It has to be passed
  * as input to the handle_input entry point of the SM
@@ -26,9 +24,7 @@
 uint16_t connection_idxs[MAX_CONNECTIONS] = { -1 };
 
 ResultMessage load_enclave(CommandMessage m) {
-  //TODO
-  // command is destroyed by the caller
-  return RESULT(ResultCode_InternalError);
+  return load_module(m->message->payload, m->message->size);
 }
 
 
@@ -97,7 +93,7 @@ void reactive_handle_output(uint16_t conn_id, void* data, size_t len) {
 
 void reactive_handle_input(uint16_t sm, uint16_t conn_id, void* data, size_t len) {
     DEBUG("Calling handle_input of sm %d", sm);
-    //TODO
+    handle_input(sm, conn_id, data, len);
 }
 
 
