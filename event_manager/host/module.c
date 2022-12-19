@@ -1,32 +1,32 @@
-#include "ta.h"
+#include "module.h"
 
 #include <stdlib.h>
 #include <string.h>
 
 typedef struct CTX_Node {
-    TA_CTX ta_ctx;
+    ModuleContext ctx;
     struct CTX_Node* next;
 } CTX_Node;
 
-static CTX_Node* ta_ctx_head = NULL;
+static CTX_Node* ctx_head = NULL;
 
-int ta_ctx_add(TA_CTX* ta_ctx) {
+int add_module(ModuleContext* ctx) {
     CTX_Node* node = malloc(sizeof(CTX_Node));
 
     if (node == NULL)
         return 0;
 
-    node->ta_ctx = *ta_ctx;
-    node->next = ta_ctx_head;
-    ta_ctx_head = node;
+    node->ctx = *ctx;
+    node->next = ctx_head;
+    ctx_head = node;
     return 1;
 }
 
-TA_CTX *ta_ctx_get_from_uuid(TEEC_UUID uuid) {
-    CTX_Node* current = ta_ctx_head;
+ModuleContext *get_module_from_uuid(TEEC_UUID uuid) {
+    CTX_Node* current = ctx_head;
 
     while (current != NULL) {
-        TA_CTX* ctx = &current->ta_ctx;
+        ModuleContext* ctx = &current->ctx;
 
         if ((ctx->uuid.timeLow == uuid.timeLow) &&
             (ctx->uuid.timeMid == uuid.timeMid) &&
@@ -42,11 +42,11 @@ TA_CTX *ta_ctx_get_from_uuid(TEEC_UUID uuid) {
     return NULL;
 }
 
-TA_CTX *ta_ctx_get_from_module_id(uint16_t id) {
-    CTX_Node* current = ta_ctx_head;
+ModuleContext *get_module_from_id(uint16_t id) {
+    CTX_Node* current = ctx_head;
 
     while (current != NULL) {
-        TA_CTX* ctx = &current->ta_ctx;
+        ModuleContext* ctx = &current->ctx;
 
         if (ctx->module_id == id) {
             return ctx;
@@ -58,8 +58,8 @@ TA_CTX *ta_ctx_get_from_module_id(uint16_t id) {
     return NULL;
 }
 
-TA_CTX initialize_ctx(unsigned char* buf) {
-  TA_CTX ctx;
+ModuleContext initialize_context(unsigned char* buf) {
+  ModuleContext ctx;
   TEEC_UUID uuid;
 
   int j = 0;
