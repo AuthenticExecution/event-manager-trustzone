@@ -41,7 +41,6 @@ ResultMessage handler_add_connection(CommandMessage m) {
   );
 
   free_parse_state(state);
-  destroy_command_message(m);
 
   if (!connections_replace(&connection) && !connections_add(&connection))
      return RESULT(ResultCode_InternalError);
@@ -79,8 +78,6 @@ ResultMessage handler_call_entrypoint(CommandMessage m) {
   }
 
   free_parse_state(state);
-  destroy_command_message(m);
-
   return res;
 }
 
@@ -106,24 +103,18 @@ ResultMessage handler_remote_output(CommandMessage m) {
   reactive_handle_input(sm, conn_id, payload, payload_len);
 
   free_parse_state(state);
-  destroy_command_message(m);
-
   return RESULT(ResultCode_Ok);
 }
 
 ResultMessage handler_load_sm(CommandMessage m) {
-  ResultMessage res = load_enclave(m);
-  destroy_command_message(m);
-  return res;
+  return load_enclave(m);
 }
 
 ResultMessage handler_ping(CommandMessage m) {
-  destroy_command_message(m);
   return RESULT(ResultCode_Ok);
 }
 
 ResultMessage handler_register_entrypoint(CommandMessage m) {
   WARNING("Periodic events disabled");
-  destroy_command_message(m);
   return RESULT(ResultCode_InternalError);
 }
