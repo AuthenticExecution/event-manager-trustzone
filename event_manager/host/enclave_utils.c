@@ -12,6 +12,8 @@
 #include "module.h"
 #include "utils.h"
 
+#define REMOTE_CONNECTION_HAS_RESPONSE 0
+
 ResultMessage load_enclave(CommandMessage m) {
   return load_module(m->message->payload, m->message->size);
 }
@@ -56,7 +58,7 @@ static void handle_remote_connection(Connection* connection,
     } else {
       if(write_command_message(sock, m) == NETWORK_FAILURE) {
         WARNING("Failed to send payload");
-      } else {
+      } else if(REMOTE_CONNECTION_HAS_RESPONSE) {
         ResultMessage res = read_result_message(sock);
 
         if(res == NULL) {

@@ -10,7 +10,6 @@
 #include "enclave_utils.h"
 
 ResultMessage handler_add_connection(CommandMessage m) {
-  DEBUG("Received add connection");
   Connection connection;
   struct in_addr* parsed_addr;
 
@@ -51,7 +50,6 @@ ResultMessage handler_add_connection(CommandMessage m) {
 }
 
 ResultMessage handler_call_entrypoint(CommandMessage m) {
-  DEBUG("Received entrypoint call");
   ParseState *state = create_parse_state(m->message->payload, m->message->size);
 
   // The payload format is [sm_id, index, args]
@@ -87,7 +85,6 @@ ResultMessage handler_call_entrypoint(CommandMessage m) {
 }
 
 ResultMessage handler_remote_output(CommandMessage m) {
-  DEBUG("Received remote output");
   ParseState *state = create_parse_state(m->message->payload, m->message->size);
 
   // The packet format is [sm_id conn_id data]
@@ -115,20 +112,17 @@ ResultMessage handler_remote_output(CommandMessage m) {
 }
 
 ResultMessage handler_load_sm(CommandMessage m) {
-  DEBUG("Received new module");
   ResultMessage res = load_enclave(m);
   destroy_command_message(m);
   return res;
 }
 
 ResultMessage handler_ping(CommandMessage m) {
-  DEBUG("Received ping");
   destroy_command_message(m);
   return RESULT(ResultCode_Ok);
 }
 
 ResultMessage handler_register_entrypoint(CommandMessage m) {
-  DEBUG("Received entrypoint registration");
   WARNING("Periodic events disabled");
   destroy_command_message(m);
   return RESULT(ResultCode_InternalError);

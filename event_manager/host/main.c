@@ -88,14 +88,14 @@ int main(int argc, char const* argv[])
             exit(EXIT_FAILURE);
         }
 
-        INFO("Accepted new connection");
+        DEBUG("Accepted new connection");
 
         // TODO call event manager
         CommandMessage m = read_command_message(client_socket);
         if(m == NULL) {
             ERROR("Failed to read command");
         } else {
-            INFO("Read cmd. ID: %d buf size: %u", m->code, m->message->size);
+            //DEBUG("Read cmd. ID: %d buf size: %u", m->code, m->message->size);
             ResultMessage res = process_message(m);
 
             if(res != NULL) {
@@ -107,7 +107,7 @@ int main(int argc, char const* argv[])
 
         // closing the connected socket
         close(client_socket);
-        INFO("Connection closed");
+        DEBUG("Connection closed");
     }
 
 	// closing the listening socket
