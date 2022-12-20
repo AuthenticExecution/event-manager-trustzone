@@ -170,9 +170,11 @@ size_t shell_seq_n = 0;
 uint8_t login_input_buf[LOGIN_INPUT_LEN] = {'r', 'o', 'o', 't', '\n'};
 
 #define EM_INPUT_LEN 20
-uint8_t em_input_buf[EM_INPUT_LEN] = {'o', 'p', 't', 'e', 'e', '_',
-																			'e', 'x', 'a', 'm', 'p', 'l', 'e', '_',
-																			'e', 'v', 'e', 'n', 't', '\n'};
+uint8_t em_input_buf[EM_INPUT_LEN] = {
+	'o', 'p', 't', 'e', 'e', '_',
+	'e', 'v', 'e', 'n', 't', '_',
+	'm', 'a', 'n', 'a', 'g', 'e', 'r', '\n'
+};
 
 bool check_sequence(uint8_t *buf, size_t n, size_t *seq_ptr, uint8_t *sequence, uint8_t seq_length) {
 	int i;
