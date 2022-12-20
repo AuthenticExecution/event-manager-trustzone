@@ -10,10 +10,10 @@
 struct ParseState
 {
     uint8_t* buf;
-    size_t   len;
+    unsigned int   len;
 };
 
-ParseState* create_parse_state(uint8_t* buf, size_t len)
+ParseState* create_parse_state(uint8_t* buf, unsigned int len)
 {
     ParseState* state = malloc(sizeof(ParseState));
     state->buf = buf;
@@ -26,7 +26,7 @@ void free_parse_state(ParseState* state)
     free(state);
 }
 
-static void advance_state(ParseState* state, size_t len)
+static void advance_state(ParseState* state, unsigned int len)
 {
     state->buf += len;
     state->len -= len;
@@ -61,13 +61,13 @@ int parse_string(ParseState* state, char** str)
     if (end == NULL)
         return 0;
 
-    size_t str_len = end - state->buf;
+    unsigned int str_len = end - state->buf;
     *str = (char*)state->buf;
     advance_state(state, str_len + 1);
     return 1;
 }
 
-int parse_raw_data(ParseState* state, size_t len, uint8_t** buf)
+int parse_raw_data(ParseState* state, unsigned int len, uint8_t** buf)
 {
     if (state->len < len)
         return 0;
@@ -77,7 +77,7 @@ int parse_raw_data(ParseState* state, size_t len, uint8_t** buf)
     return 1;
 }
 
-int parse_all_raw_data(ParseState* state, uint8_t** buf, size_t* len)
+int parse_all_raw_data(ParseState* state, uint8_t** buf, unsigned int* len)
 {
     *buf = state->buf;
     *len = state->len;

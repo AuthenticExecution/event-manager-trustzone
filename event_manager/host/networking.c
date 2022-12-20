@@ -22,7 +22,7 @@
 
   @return: Message object (heap allocation)
 */
-Message create_message(size_t size, unsigned char *payload) {
+Message create_message(unsigned int size, unsigned char *payload) {
   Message res = malloc(sizeof(*res));
   if(res == NULL) {
     ERROR("Failed allocation of Message struct");
@@ -50,34 +50,6 @@ void destroy_message(Message m) {
 
   free(m);
 }
-
-
-/*
-  Convert from u8 to Header
-
-  @header: header.
-
-  @return: Header. If the header is invalid (i.e. does not match any enum), returns Header_Invalid
-*/
-Header u8_to_header(uint8_t header) {
-  if(header > Header_Invalid) return Header_Invalid;
-  return header;
-}
-
-
-/*
-  Convert from Header to u8
-  This function is used because Header is stored as int (8 bits)
-  and we want to make sure the conversion doesn't produce errors
-
-  @header: Header.
-
-  @return: u8 representation of the header
-*/
-uint8_t header_to_u8(Header header) {
-  return header;
-}
-
 
 /*
   Convert from u8 to ResultCode
@@ -216,24 +188,24 @@ int write_byte(int fd, unsigned char b) {
 }
 
 
-int read_buf(int fd, unsigned char* buf, size_t size) {
-  size_t total_read = 0;
+int read_buf(int fd, unsigned char* buf, unsigned int size) {
+  unsigned int total_read = 0;
 
-  //DEBUG("Reading buf with size: %lu", size);
+  //DEBUG("Reading buf with size: %u", size);
 
   while(1) {
-    size_t nread = read(fd, buf + total_read, size - total_read);
+    int nread = read(fd, buf + total_read, size - total_read);
 
-    if(nread == 0) {
-      WARNING("Read zero bytes");
+    if(nread <= 0) {
+      WARNING("Read retval: %d", nread);
       return NETWORK_FAILURE;
     }
 
     total_read += nread;
-    //DEBUG("Read %lu bytes. %lu to go", nread, size - total_read);
+    //DEBUG("Read %u bytes. %u to go", nread, size - total_read);
 
     if(total_read > size) {
-      WARNING("Read more than expected: %lu/%lu", total_read, size);
+      WARNING("Read more than expected: %u/%u", total_read, size);
       return NETWORK_FAILURE;
     } else if(total_read == size) {
       break;
@@ -243,12 +215,30 @@ int read_buf(int fd, unsigned char* buf, size_t size) {
   return NETWORK_SUCCESS;
 }
 
-int write_buf(int fd, unsigned char* buf, size_t size) {
-  int nwritten = write(fd, buf, size);
-  if(nwritten != size) {
-    WARNING("Partial write: %d/%lu", nwritten, size);
-    return NETWORK_FAILURE;
+int write_buf(int fd, unsigned char* buf, unsigned int size) {
+  unsigned int total_written = 0;
+
+  //DEBUG("Writing buffer of %u bytes", size);
+
+  while(1) {
+    int nwritten = write(fd, buf + total_written, size - total_written);
+
+    if(nwritten <= 0) {
+      WARNING("Write retval: %d", nwritten);
+      return NETWORK_FAILURE;
+    }
+
+    total_written += nwritten;
+    //DEBUG("Written %u bytes. %u to go", nwritten, size - total_written);
+
+    if(total_written > size) {
+      WARNING("Written more than expected: %u/%u", total_written, size);
+      return NETWORK_FAILURE;
+    } else if(total_written == size) {
+      break;
+    }
   }
+
   return NETWORK_SUCCESS;
 }
 
@@ -298,7 +288,7 @@ int read_u32(int fd, uint32_t* val) {
   @return: Message: caller takes ownership of the data and destroy it
                     using destroy_message when he's done using it
 */
-Message read_message(int fd, size_t size) {
+Message read_message(int fd, unsigned int size) {
   unsigned char *buf;
 
   if(size == 0) {
@@ -308,7 +298,7 @@ Message read_message(int fd, size_t size) {
   else {
     buf = malloc(size * sizeof(unsigned char));
     if(buf == NULL) {
-      ERROR("Failed allocation of %lu bytes", size);
+      ERROR("Failed allocation of %u bytes", size);
       return NULL;
     }
 
@@ -367,7 +357,6 @@ ResultMessage read_result_message(int fd) {
   @m: ResultMessage to write
 */
 int write_result_message(int fd, ResultMessage m) {
-  if(write_byte(fd, header_to_u8(Header_Result)) == NETWORK_FAILURE) return NETWORK_FAILURE;
   if(write_byte(fd, result_code_to_u8(m->code)) == NETWORK_FAILURE) return NETWORK_FAILURE;
   return write_message(fd, m->message);
 }
@@ -381,7 +370,7 @@ int write_result_message(int fd, ResultMessage m) {
 */
 CommandMessage read_command_message(int fd) {
   uint8_t code;
-  size_t size;
+  unsigned int size;
   if(read_byte(fd, &code) == NETWORK_FAILURE) return NULL;
 
   CommandCode command_code = u8_to_command_code(code);
@@ -415,7 +404,6 @@ CommandMessage read_command_message(int fd) {
   @m: CommandMessage to write
 */
 int write_command_message(int fd, CommandMessage m) {
-  if(write_byte(fd, header_to_u8(Header_Command)) == NETWORK_FAILURE) return NETWORK_FAILURE;
   if(write_byte(fd, command_code_to_u8(m->code)) == NETWORK_FAILURE) return NETWORK_FAILURE;
   return write_message(fd, m->message);
 }

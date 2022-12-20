@@ -95,11 +95,11 @@ int main(int argc, char const* argv[])
         if(m == NULL) {
             ERROR("Failed to read command");
         } else {
-            INFO("Read cmd. ID: %d buf size: %lu", m->code, m->message->size);
+            INFO("Read cmd. ID: %d buf size: %u", m->code, m->message->size);
             ResultMessage res = process_message(m);
 
             if(res != NULL) {
-                DEBUG("Result code: %d, size: %lu", res->code, res->message->size);
+                DEBUG("Result code: %d, size: %u", res->code, res->message->size);
                 write_result_message(client_socket, res);
                 destroy_result_message(res);
             }

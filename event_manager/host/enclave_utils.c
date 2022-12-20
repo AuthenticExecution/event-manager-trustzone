@@ -24,13 +24,13 @@ static int is_local_connection(Connection* connection) {
 static void handle_local_connection(
   Connection* connection,
   void* data,
-  size_t len
+  unsigned int len
 ) {
     reactive_handle_input(connection->to_sm, connection->conn_id, data, len);
 }
 
 static void handle_remote_connection(Connection* connection,
-                                     void* data, size_t len) {
+                                     void* data, unsigned int len) {
     unsigned char *payload = malloc(len + 4);
     if(payload == NULL) {
       WARNING("Cannot allocate output payload");
@@ -75,7 +75,7 @@ static void handle_remote_connection(Connection* connection,
 }
 
 
-void reactive_handle_output(uint16_t conn_id, void* data, size_t len) {
+void reactive_handle_output(uint16_t conn_id, void* data, unsigned int len) {
   // data is owned by the caller, we don't manage its memory
   Connection* connection = connections_get(conn_id);
 
@@ -99,7 +99,7 @@ void reactive_handle_output(uint16_t conn_id, void* data, size_t len) {
 }
 
 
-void reactive_handle_input(uint16_t sm, uint16_t conn_id, void* data, size_t len) {
+void reactive_handle_input(uint16_t sm, uint16_t conn_id, void* data, unsigned int len) {
     DEBUG("Calling handle_input of sm %d", sm);
     handle_input(sm, conn_id, data, len);
 }
@@ -108,7 +108,7 @@ void reactive_handle_input(uint16_t sm, uint16_t conn_id, void* data, size_t len
 ResultMessage handle_set_key(uint16_t id, ParseState *state) {
   // Associated data: [encryption_u8 conn_id_u16 io_id_u16 nonce_u16]
   uint8_t* ad;
-  const size_t AD_LEN = 7;
+  const unsigned int AD_LEN = 7;
   if (!parse_raw_data(state, AD_LEN, &ad))
       return RESULT(ResultCode_IllegalPayload);
 
@@ -140,8 +140,8 @@ ResultMessage handle_attest(uint16_t id, ParseState *state) {
 
 ResultMessage handle_disable(uint16_t id, ParseState *state) {
   uint8_t* ad;
-  const size_t AD_LEN = 2;
-  const size_t CIPHER_LEN = 2;
+  const unsigned int AD_LEN = 2;
+  const unsigned int CIPHER_LEN = 2;
 
   if (!parse_raw_data(state, AD_LEN, &ad))
       return RESULT(ResultCode_IllegalPayload);
@@ -160,7 +160,7 @@ ResultMessage handle_disable(uint16_t id, ParseState *state) {
 
 ResultMessage handle_user_entrypoint(uint16_t id, uint16_t index, ParseState *state) {
   uint8_t* payload;
-  size_t payload_len;
+  unsigned int payload_len;
   if(!parse_all_raw_data(state, &payload, &payload_len)) {
     return RESULT(ResultCode_IllegalPayload);
   }

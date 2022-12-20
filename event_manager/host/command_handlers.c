@@ -100,11 +100,11 @@ ResultMessage handler_remote_output(CommandMessage m) {
       return RESULT(ResultCode_IllegalPayload);
 
   uint8_t* payload;
-  size_t payload_len;
+  unsigned int payload_len;
   if (!parse_all_raw_data(state, &payload, &payload_len))
       return RESULT(ResultCode_IllegalPayload);
 
-  DEBUG("id: %d, conn_id: %d, payload_size: %lu", sm, conn_id, payload_len);
+  DEBUG("id: %d, conn_id: %d, payload_size: %u", sm, conn_id, payload_len);
 
   reactive_handle_input(sm, conn_id, payload, payload_len);
 

@@ -8,22 +8,12 @@
 #define NETWORK_FAILURE 0
 
 typedef struct message {
-  size_t size;
+  unsigned int size;
   unsigned char *payload;
 } *Message;
 
-Message create_message(size_t size, unsigned char *payload);
+Message create_message(unsigned int size, unsigned char *payload);
 void destroy_message(Message m);
-
-typedef enum {
-  Header_Result,
-  Header_Command,
-  Header_ACK,
-  Header_Invalid
-} Header;
-
-Header u8_to_header(uint8_t header);
-uint8_t header_to_u8(Header header);
 
 typedef enum {
     ResultCode_Ok,
@@ -75,8 +65,8 @@ int read_byte(int fd, unsigned char* b);
 int write_byte(int fd, unsigned char b);
 
 
-int read_buf(int fd, unsigned char* buf, size_t size);
-int write_buf(int fd, unsigned char* buf, size_t size);
+int read_buf(int fd, unsigned char* buf, unsigned int size);
+int write_buf(int fd, unsigned char* buf, unsigned int size);
 
 
 int read_u16(int fd, uint16_t *val);
@@ -86,7 +76,7 @@ int write_u16(int fd, uint16_t val);
 int read_u32(int fd, uint32_t *val);
 
 
-Message read_message(int fd, size_t size);
+Message read_message(int fd, unsigned int size);
 int write_message(int fd, Message m);
 
 

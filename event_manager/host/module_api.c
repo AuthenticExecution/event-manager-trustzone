@@ -32,7 +32,7 @@ TEEC_Result call_entry(ModuleContext *ctx, Entrypoint entry_id) {
 }
 
 void send_outputs(
-    size_t num_outputs,
+    unsigned int num_outputs,
     unsigned char *conn_ids,
     unsigned char *payloads,
     unsigned char *tags
@@ -70,7 +70,7 @@ void send_outputs(
     }
 }
 
-int initialize_context(ModuleContext *ctx, unsigned char* buf, size_t size) {
+int initialize_context(ModuleContext *ctx, unsigned char* buf, unsigned int size) {
   TEEC_UUID uuid;
 
   if(size < LOAD_HEADER_LEN) {
@@ -117,14 +117,14 @@ int initialize_context(ModuleContext *ctx, unsigned char* buf, size_t size) {
   return 1;
 }
 
-ResultMessage load_module(unsigned char* buf, size_t size) {
+ResultMessage load_module(unsigned char* buf, unsigned int size) {
 
     ModuleContext ctx;
     TEEC_Result rc;
     uint32_t err_origin;
 
     if(!initialize_context(&ctx, buf, size)) {
-        ERROR("initialize_context: buffer too small %lu/18", size);
+        ERROR("initialize_context: buffer too small %u/18", size);
         return RESULT(ResultCode_IllegalPayload);
     }
 
@@ -192,14 +192,14 @@ ResultMessage load_module(unsigned char* buf, size_t size) {
     return RESULT(ResultCode_Ok);
 }
 
-void handle_input(uint16_t sm, uint16_t conn_id, unsigned char* data, size_t len) {
+void handle_input(uint16_t sm, uint16_t conn_id, unsigned char* data, unsigned int len) {
     // check if buffer has enough size
     if(len < SECURITY_BYTES) {
-        ERROR("Payload too small: %lu", len);
+        ERROR("Payload too small: %u", len);
         return;
     }
 
-    size_t cipher_size = len - SECURITY_BYTES;
+    unsigned int cipher_size = len - SECURITY_BYTES;
     ModuleContext *ctx = get_module_from_id(sm);
 
     if(ctx == NULL) {
@@ -260,7 +260,7 @@ void handle_input(uint16_t sm, uint16_t conn_id, unsigned char* data, size_t len
 ResultMessage set_key(
     uint16_t sm,
     unsigned char* ad,
-    size_t ad_len,
+    unsigned int ad_len,
     unsigned char* cipher,
     unsigned char* tag
 ) {
@@ -322,7 +322,7 @@ ResultMessage set_key(
 ResultMessage attest(
     uint16_t sm,
     unsigned char* challenge,
-    size_t challenge_len
+    unsigned int challenge_len
 ) {
     ModuleContext *ctx = get_module_from_id(sm);
 
@@ -376,9 +376,9 @@ ResultMessage attest(
 ResultMessage disable(
     uint16_t sm,
     unsigned char* ad,
-    size_t ad_len,
+    unsigned int ad_len,
     unsigned char* cipher,
-    size_t cipher_len,
+    unsigned int cipher_len,
     unsigned char* tag
 ) {
     ModuleContext *ctx = get_module_from_id(sm);
@@ -440,7 +440,7 @@ ResultMessage call(
     uint16_t sm,
     uint16_t entry_id,
     unsigned char* payload,
-    size_t len
+    unsigned int len
 ) {
     ModuleContext *ctx = get_module_from_id(sm);
 

@@ -8,8 +8,8 @@
 
 ResultMessage load_enclave(CommandMessage m);
 
-void reactive_handle_output(uint16_t conn_id, void* data, size_t len);
-void reactive_handle_input(uint16_t sm, uint16_t conn_id, void* data, size_t len);
+void reactive_handle_output(uint16_t conn_id, void* data, unsigned int len);
+void reactive_handle_input(uint16_t sm, uint16_t conn_id, void* data, unsigned int len);
 
 ResultMessage handle_set_key(uint16_t id, ParseState *state);
 ResultMessage handle_attest(uint16_t id, ParseState *state);
