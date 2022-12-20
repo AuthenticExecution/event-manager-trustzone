@@ -63,7 +63,7 @@ ResultMessage handler_call_entrypoint(CommandMessage m) {
   if (!parse_int(state, &index))
      return RESULT(ResultCode_IllegalPayload);
 
-  DEBUG("id: %d, index: %d", id, index);
+  //DEBUG("id: %d, index: %d", id, index);
 
   ResultMessage res;
 

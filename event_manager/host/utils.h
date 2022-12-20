@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <unistd.h>
+#include <netinet/in.h>
 
 typedef struct ParseState ParseState;
 
@@ -13,5 +14,7 @@ int parse_int(ParseState* state, uint16_t* i);
 int parse_string(ParseState* state, char** str);
 int parse_raw_data(ParseState* state, size_t len, uint8_t** buf);
 int parse_all_raw_data(ParseState* state, uint8_t** buf, size_t* len);
+
+int connect_to_server(struct in_addr address, uint16_t port, int *fd);
 
 #endif

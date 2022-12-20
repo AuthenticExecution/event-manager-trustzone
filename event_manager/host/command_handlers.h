@@ -8,7 +8,8 @@ typedef enum
     Entrypoint_SetKey                = 0x0,
     Entrypoint_Attest                = 0x1,
     Entrypoint_Disable               = 0x2,
-    Entrypoint_HandleInput           = 0x3
+    Entrypoint_HandleInput           = 0x3,
+    Entrypoint_User                  = 0x4
 } Entrypoint;
 
 ResultMessage handler_add_connection(CommandMessage m);

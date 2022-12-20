@@ -2,6 +2,7 @@
 #define __TA_H__
 
 #include "networking.h"
+#include "command_handlers.h"
 
 // platform-specific library and definitions
 #include "tee_client_api.h"
@@ -30,9 +31,18 @@ ModuleContext *get_module_from_uuid(TEEC_UUID uuid);
 
 /* API for interfacing with modules */
 
+// Platform-specific functions
+TEEC_Result call_entry(ModuleContext *ctx, Entrypoint entry_id);
+void send_outputs(size_t num_outputs, unsigned char *conn_ids, unsigned char *payloads, unsigned char *tags);
+
 // Generic functions
 int initialize_context(ModuleContext *ctx, unsigned char* buf, size_t size);
 ResultMessage load_module(unsigned char* buf, size_t size);
-void handle_input(uint16_t sm, uint16_t conn_id, void* data, size_t len);
+void handle_input(uint16_t sm, uint16_t conn_id, unsigned char* data, size_t len);
+ResultMessage set_key(uint16_t sm, unsigned char* ad, size_t ad_len, unsigned char* cipher, unsigned char* tag);
+ResultMessage attest(uint16_t sm, unsigned char* challenge, size_t challenge_len);
+ResultMessage disable(uint16_t sm, unsigned char* ad, size_t ad_len, unsigned char* cipher, size_t cipher_len, unsigned char* tag);
+ResultMessage call(uint16_t sm, uint16_t entry_id, unsigned char* payload, size_t len);
+
 
 #endif

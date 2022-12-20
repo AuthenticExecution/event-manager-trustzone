@@ -1,7 +1,11 @@
 #include "utils.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
+
+#include "logging.h"
 
 struct ParseState
 {
@@ -78,5 +82,28 @@ int parse_all_raw_data(ParseState* state, uint8_t** buf, size_t* len)
     *buf = state->buf;
     *len = state->len;
     advance_state(state, state->len);
+    return 1;
+}
+
+int connect_to_server(struct in_addr address, uint16_t port, int *fd) {
+    int sock;
+    struct sockaddr_in server_addr;
+
+    // Creating socket file descriptor
+	if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+		ERROR("socket creation failed");
+		return 0;
+	}
+
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr = address;
+    server_addr.sin_port = htons(port);
+
+    if (connect(sock, (struct sockaddr*) &server_addr, sizeof(server_addr)) != 0) {
+		ERROR("Connection to server failed");
+        return 0;
+    }
+
+    *fd = sock;
     return 1;
 }

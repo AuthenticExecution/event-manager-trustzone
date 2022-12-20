@@ -10,18 +10,7 @@
 #include "command_handlers.h"
 #include "connection.h"
 #include "module.h"
-
-/* store the conn_idx ids associated to a connection ID. conn_idx is an index
- * used internally by each SM, which is returned by set_key.It has to be passed
- * as input to the handle_input entry point of the SM
- *
- * Note: adjust MAX_CONNECTIONS accordingly. This value should ALWAYS be >= than
- *       the total number of connections in the Authentic Execution deployment
- *
- * TODO: this array should be dynamic in a real scenario.
- */
-#define MAX_CONNECTIONS 128
-uint16_t connection_idxs[MAX_CONNECTIONS] = { -1 };
+#include "utils.h"
 
 ResultMessage load_enclave(CommandMessage m) {
   return load_module(m->message->payload, m->message->size);
@@ -32,17 +21,19 @@ static int is_local_connection(Connection* connection) {
   return (int) connection->local;
 }
 
-static void handle_local_connection(Connection* connection,
-                      void* data, size_t len) {
+static void handle_local_connection(
+  Connection* connection,
+  void* data,
+  size_t len
+) {
     reactive_handle_input(connection->to_sm, connection->conn_id, data, len);
-    free(data);
 }
 
 static void handle_remote_connection(Connection* connection,
                                      void* data, size_t len) {
     unsigned char *payload = malloc(len + 4);
     if(payload == NULL) {
-      WARNING("handle_remote_connection: OOM");
+      WARNING("Cannot allocate output payload");
       return;
     }
 
@@ -58,31 +49,48 @@ static void handle_remote_connection(Connection* connection,
             create_message(len + 4, payload)
     );
 
-    //TODO send this to address
-    //write_command_message(m, (unsigned char *) connection->to_address.u8, connection->to_port);
+    // open socket
+    int sock;
+    if(!connect_to_server(connection->to_address, connection->to_port, &sock)) {
+      WARNING("Could not connect to remote EM");
+    } else {
+      if(write_command_message(sock, m) == NETWORK_FAILURE) {
+        WARNING("Failed to send payload");
+      } else {
+        ResultMessage res = read_result_message(sock);
+
+        if(res == NULL) {
+          WARNING("Failed to read response from remote EM");
+        } else if(res->code != ResultCode_Ok) {
+          WARNING("Received response from remote EM: %d", res->code);
+        }
+
+        destroy_result_message(res);
+      }
+
+      close(sock);
+    }
 
     destroy_command_message(m);
-    free(data);
 }
 
 
 void reactive_handle_output(uint16_t conn_id, void* data, size_t len) {
-  #if USE_MINTIMER && TIMING_TESTS
-    start_time = mintimer_now_usec();
-  #endif
-
+  // data is owned by the caller, we don't manage its memory
   Connection* connection = connections_get(conn_id);
 
   if (connection == NULL) {
-      DEBUG("no connection for id %u", conn_id);
+      WARNING("no connection for id %u", conn_id);
       return;
   }
 
-  DEBUG("accepted output %u to be delivered at %s:%d %d",
+  DEBUG(
+      "accepted output %u to be delivered at %s:%d %d",
       connection->conn_id,
       inet_ntoa(connection->to_address),
       connection->to_port,
-      connection->to_sm);
+      connection->to_sm
+  );
 
   if (is_local_connection(connection))
       handle_local_connection(connection, data, len);
@@ -98,17 +106,11 @@ void reactive_handle_input(uint16_t sm, uint16_t conn_id, void* data, size_t len
 
 
 ResultMessage handle_set_key(uint16_t id, ParseState *state) {
+  // Associated data: [encryption_u8 conn_id_u16 io_id_u16 nonce_u16]
   uint8_t* ad;
-  const size_t AD_LEN = sizeof(uint16_t) + sizeof(uint16_t) + 2;
+  const size_t AD_LEN = 7;
   if (!parse_raw_data(state, AD_LEN, &ad))
       return RESULT(ResultCode_IllegalPayload);
-
-  // check if we can store the conn_idx of this connection ID on connection_idxs
-  uint16_t conn_id = (ad[0] << 8) | ad[1];
-  if(conn_id >= MAX_CONNECTIONS) {
-    ERROR("connection_idxs too small");
-    return RESULT(ResultCode_InternalError);
-  }
 
   uint8_t* cipher;
   if (!parse_raw_data(state, SECURITY_BYTES, &cipher))
@@ -118,9 +120,8 @@ ResultMessage handle_set_key(uint16_t id, ParseState *state) {
   if (!parse_raw_data(state, SECURITY_BYTES, &tag))
       return RESULT(ResultCode_IllegalPayload);
 
-  //TODO call
-
-  return RESULT(ResultCode_Ok);
+  DEBUG("Calling set_key of sm %d", id);
+  return set_key(id, ad, AD_LEN, cipher, tag);
 }
 
 
@@ -133,35 +134,28 @@ ResultMessage handle_attest(uint16_t id, ParseState *state) {
   if (!parse_raw_data(state, challenge_len, &challenge))
       return RESULT(ResultCode_IllegalPayload);
 
-  // The result format is [tag] where the tag is the challenge response
-  const size_t RESULT_PAYLOAD_SIZE = SECURITY_BYTES;
-  void* result_payload = malloc(RESULT_PAYLOAD_SIZE);
-
-  if (result_payload == NULL)
-      return RESULT(ResultCode_InternalError);
-
-  //TODO call
-
-  return RESULT_DATA(ResultCode_Ok, RESULT_PAYLOAD_SIZE, result_payload);
+  DEBUG("Calling attest of sm %d", id);
+  return attest(id, challenge, challenge_len);
 }
 
 ResultMessage handle_disable(uint16_t id, ParseState *state) {
   uint8_t* ad;
   const size_t AD_LEN = 2;
+  const size_t CIPHER_LEN = 2;
+
   if (!parse_raw_data(state, AD_LEN, &ad))
       return RESULT(ResultCode_IllegalPayload);
 
   uint8_t* cipher;
-  if (!parse_raw_data(state, 2, &cipher))
+  if (!parse_raw_data(state, CIPHER_LEN, &cipher))
       return RESULT(ResultCode_IllegalPayload);
 
   uint8_t* tag;
   if (!parse_raw_data(state, SECURITY_BYTES, &tag))
       return RESULT(ResultCode_IllegalPayload);
 
-  //TODO call
-
-  return RESULT(ResultCode_Ok);
+  DEBUG("Calling disable of sm %d", id);
+  return disable(id, ad, AD_LEN, cipher, CIPHER_LEN, tag);
 }
 
 ResultMessage handle_user_entrypoint(uint16_t id, uint16_t index, ParseState *state) {
@@ -171,7 +165,6 @@ ResultMessage handle_user_entrypoint(uint16_t id, uint16_t index, ParseState *st
     return RESULT(ResultCode_IllegalPayload);
   }
 
-  //TODO call
-
-  return RESULT(ResultCode_Ok);
+  DEBUG("Calling entry point %d of sm %d", index, id);
+  return call(id, index, payload, payload_len);
 }
