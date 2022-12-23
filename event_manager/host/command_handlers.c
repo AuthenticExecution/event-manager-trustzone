@@ -73,6 +73,7 @@ ResultMessage handler_call_entrypoint(CommandMessage m) {
       break;
     case Entrypoint_Disable:
       res = handle_disable(id, state);
+      break;
     default:
       res = handle_user_entrypoint(id, index, state);
   }
