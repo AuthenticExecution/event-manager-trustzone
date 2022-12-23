@@ -6,8 +6,11 @@
 
 // platform-specific library and definitions
 #include "tee_client_api.h"
+
 #define SECURITY_BYTES 16
 #define LOAD_HEADER_LEN 18
+#define OUTPUT_DATA_MAX_SIZE 1024 * 1024 // total size (for all concurrent outputs) in bytes
+#define MAX_CONCURRENT_OUTPUTS 8
 
 // data structure containing all the required fields
 typedef struct {
@@ -24,16 +27,11 @@ typedef struct {
 int add_module(ModuleContext *ta_ctx);
 ModuleContext *get_module_from_id(uint16_t id);
 
-// Platform-specific functions
-//TODO check if this can be removed
-ModuleContext *get_module_from_uuid(TEEC_UUID uuid);
-
-
 /* API for interfacing with modules */
 
 // Platform-specific functions
 TEEC_Result call_entry(ModuleContext *ctx, Entrypoint entry_id);
-void send_outputs(unsigned int num_outputs, unsigned char *conn_ids, unsigned char *payloads, unsigned char *tags);
+void send_outputs(unsigned int num_outputs, unsigned char *conn_ids, unsigned char *payloads);
 
 // Generic functions
 int initialize_context(ModuleContext *ctx, unsigned char* buf, unsigned int size);

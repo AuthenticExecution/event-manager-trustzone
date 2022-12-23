@@ -7,11 +7,6 @@
 #include "logging.h"
 #include "enclave_utils.h"
 
-// please change this.
-#define OUT_CONN_IDS_SIZE 32
-#define OUT_PAYLOADS_SIZE 256
-#define OUT_TAGS_SIZE 256
-
 TEEC_Result call_entry(ModuleContext *ctx, Entrypoint entry_id) {
     TEEC_Session temp_sess;
     TEEC_Context temp_ctx;
@@ -34,39 +29,20 @@ TEEC_Result call_entry(ModuleContext *ctx, Entrypoint entry_id) {
 void send_outputs(
     unsigned int num_outputs,
     unsigned char *conn_ids,
-    unsigned char *payloads,
-    unsigned char *tags
+    unsigned char *payloads
 ) {
     // check if there are any outputs to send out, calling handle_output
     // for each of them
 
-    int index = 0;
+    int pl_offset = 0;
     for(int i = 0; i < num_outputs; i++) {
-        uint16_t conn_id = 0;
-        int j = 0;
-        // TODO only one byte for the ciphertext length?!
-        int cipher_len = payloads[index] & 0xFF;
-
-        unsigned char *output_payload = malloc(cipher_len + SECURITY_BYTES);
-        if(output_payload == NULL) {
-            WARNING("Failed to allocate payload for handle_output");
-            return;
-        }
-
-        // prepare parameters
-        for(int m = (2 * i) + 1; m >= (2*i); --m) {
-            // TODO what is this!? why is this an addition?
-            conn_id = conn_id + (( conn_ids[m] & 0xFF ) << (8*j));
-            ++j;
-        }
-        memcpy(output_payload, payloads + index + 1, cipher_len);
-        memcpy(output_payload + cipher_len, tags + (SECURITY_BYTES * i), SECURITY_BYTES);
+        uint16_t conn_id = *((uint16_t *) conn_ids + 2 * i);
+        uint32_t cipher_len = *((uint32_t *) payloads + pl_offset);
 
         // call handle_output
-        reactive_handle_output(conn_id, output_payload, cipher_len + SECURITY_BYTES);
+        reactive_handle_output(conn_id, payloads + pl_offset + 4, cipher_len + SECURITY_BYTES);
 
-        index =  index + cipher_len + 1;
-        free(output_payload);
+        pl_offset += 4 + cipher_len + SECURITY_BYTES;
     }
 }
 
@@ -199,6 +175,11 @@ void handle_input(uint16_t sm, uint16_t conn_id, unsigned char* data, unsigned i
         return;
     }
 
+    if(len > OUTPUT_DATA_MAX_SIZE + SECURITY_BYTES * MAX_CONCURRENT_OUTPUTS) {
+        ERROR("Payload too big: %u", len);
+        return;
+    }
+
     unsigned int cipher_size = len - SECURITY_BYTES;
     ModuleContext *ctx = get_module_from_id(sm);
 
@@ -207,11 +188,12 @@ void handle_input(uint16_t sm, uint16_t conn_id, unsigned char* data, unsigned i
         return;
     }
 
-    //TODO this is very bad. This assumes only 256 bytes of payload for future
-    //      payloads, even if the input calls multiple outputs. Fix it.
-    unsigned char *arg1_buf = malloc(OUT_CONN_IDS_SIZE);
-    unsigned char *arg2_buf = malloc(OUT_PAYLOADS_SIZE);
-    unsigned char *arg3_buf = malloc(OUT_TAGS_SIZE);
+    unsigned char *arg1_buf = malloc(2 * MAX_CONCURRENT_OUTPUTS);
+    unsigned char *arg2_buf = malloc(
+        OUTPUT_DATA_MAX_SIZE + 
+        SECURITY_BYTES * MAX_CONCURRENT_OUTPUTS
+    );
+    unsigned char *arg3_buf = malloc(SECURITY_BYTES);
 
     if(arg1_buf == NULL || arg2_buf == NULL || arg3_buf == NULL) {
         ERROR("Failed to allocate buffers");
@@ -230,23 +212,23 @@ void handle_input(uint16_t sm, uint16_t conn_id, unsigned char* data, unsigned i
     ctx->op.params[0].value.a = cipher_size;
     ctx->op.params[0].value.b = conn_id;
     ctx->op.params[1].tmpref.buffer = (void *) arg1_buf;
-    ctx->op.params[1].tmpref.size = OUT_CONN_IDS_SIZE;
+    ctx->op.params[1].tmpref.size = 2 * MAX_CONCURRENT_OUTPUTS;
     ctx->op.params[2].tmpref.buffer = (void *) arg2_buf;
-    ctx->op.params[2].tmpref.size = OUT_PAYLOADS_SIZE;
+    ctx->op.params[2].tmpref.size = OUTPUT_DATA_MAX_SIZE + SECURITY_BYTES * MAX_CONCURRENT_OUTPUTS;
     ctx->op.params[3].tmpref.buffer = (void *) arg3_buf;
-    ctx->op.params[3].tmpref.size = OUT_TAGS_SIZE;
+    ctx->op.params[3].tmpref.size = SECURITY_BYTES;
     ctx->op.paramTypes = TEEC_PARAM_TYPES(
         TEEC_VALUE_INOUT,
         TEEC_MEMREF_TEMP_OUTPUT,
         TEEC_MEMREF_TEMP_INOUT,
-        TEEC_MEMREF_TEMP_INOUT
+        TEEC_MEMREF_TEMP_INPUT
     );
 
     // call entry point
     TEEC_Result rc = call_entry(ctx, Entrypoint_HandleInput);
 
     if (rc == TEEC_SUCCESS) {
-        send_outputs(ctx->op.params[0].value.b, arg1_buf, arg2_buf, arg3_buf);
+        send_outputs(ctx->op.params[0].value.b, arg1_buf, arg2_buf);
     } else {
         ERROR("TEEC_InvokeCommand failed: %d", rc);
     }
@@ -444,20 +426,26 @@ ResultMessage call(
 ) {
     ModuleContext *ctx = get_module_from_id(sm);
 
+    if(len > OUTPUT_DATA_MAX_SIZE + SECURITY_BYTES * MAX_CONCURRENT_OUTPUTS) {
+        ERROR("Payload too big: %u", len);
+        return RESULT(ResultCode_BadRequest);
+    }
+
     if(ctx == NULL) {
         ERROR("Module %d not found", sm);
         return RESULT(ResultCode_BadRequest);
     }
 
-    unsigned char *arg1_buf = malloc(OUT_CONN_IDS_SIZE);
-    unsigned char *arg2_buf = malloc(OUT_PAYLOADS_SIZE);
-    unsigned char *arg3_buf = malloc(OUT_TAGS_SIZE);
+    unsigned char *arg1_buf = malloc(2 * MAX_CONCURRENT_OUTPUTS);
+    unsigned char *arg2_buf = malloc(
+        OUTPUT_DATA_MAX_SIZE + 
+        SECURITY_BYTES * MAX_CONCURRENT_OUTPUTS
+    );
 
-    if(arg1_buf == NULL || arg2_buf == NULL || arg3_buf == NULL) {
+    if(arg1_buf == NULL || arg2_buf == NULL) {
         ERROR("Failed to allocate buffers");
         if(arg1_buf != NULL) free(arg1_buf);
         if(arg2_buf != NULL) free(arg2_buf);
-        if(arg3_buf != NULL) free(arg3_buf);
         return RESULT(ResultCode_InternalError);
     }
 
@@ -469,16 +457,14 @@ ResultMessage call(
     ctx->op.params[0].value.b = entry_id;
     ctx->op.params[0].value.a = len;
     ctx->op.params[1].tmpref.buffer = (void *) arg1_buf;
-    ctx->op.params[1].tmpref.size = OUT_CONN_IDS_SIZE;
+    ctx->op.params[1].tmpref.size = 2 * MAX_CONCURRENT_OUTPUTS;
     ctx->op.params[2].tmpref.buffer = (void *) arg2_buf;
-    ctx->op.params[2].tmpref.size = OUT_PAYLOADS_SIZE;
-    ctx->op.params[3].tmpref.buffer = (void *) arg3_buf;
-    ctx->op.params[3].tmpref.size = OUT_TAGS_SIZE;
+    ctx->op.params[2].tmpref.size = OUTPUT_DATA_MAX_SIZE + SECURITY_BYTES * MAX_CONCURRENT_OUTPUTS;
     ctx->op.paramTypes = TEEC_PARAM_TYPES(
         TEEC_VALUE_INOUT,
         TEEC_MEMREF_TEMP_OUTPUT,
         TEEC_MEMREF_TEMP_INOUT,
-        TEEC_MEMREF_TEMP_OUTPUT
+        TEEC_NONE
     );
 
     // call entry point
@@ -486,7 +472,7 @@ ResultMessage call(
 
     ResultMessage res;
     if (rc == TEEC_SUCCESS) {
-        send_outputs(ctx->op.params[0].value.b, arg1_buf, arg2_buf, arg3_buf);
+        send_outputs(ctx->op.params[0].value.b, arg1_buf, arg2_buf);
         res = RESULT(ResultCode_Ok); //TODO where is the response!?!?!
     } else {
         ERROR("TEEC_InvokeCommand failed: %d", rc);
@@ -496,7 +482,6 @@ ResultMessage call(
     // free buffers
     free(arg1_buf);
     free(arg2_buf);
-    free(arg3_buf);
 
     return res;
 }

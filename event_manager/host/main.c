@@ -18,8 +18,6 @@ void sig_handler(int signum){
     WARNING("Client disconnected");
 }
 
-// TODO check arguments of functions and variables
-
 int main(int argc, char const* argv[])
 {
 	int server_fd, client_socket;
@@ -90,7 +88,6 @@ int main(int argc, char const* argv[])
 
         DEBUG("Accepted new connection");
 
-        // TODO call event manager
         CommandMessage m = read_command_message(client_socket);
         if(m == NULL) {
             ERROR("Failed to read command");

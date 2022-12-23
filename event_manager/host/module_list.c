@@ -25,26 +25,6 @@ int add_module(ModuleContext* ctx) {
     return 1;
 }
 
-ModuleContext *get_module_from_uuid(TEEC_UUID uuid) {
-    CTX_Node* current = ctx_head;
-
-    while (current != NULL) {
-        ModuleContext* ctx = &current->ctx;
-
-        if ((ctx->uuid.timeLow == uuid.timeLow) &&
-            (ctx->uuid.timeMid == uuid.timeMid) &&
-            (ctx->uuid.timeHiAndVersion == uuid.timeHiAndVersion) &&
-            !memcmp(ctx->uuid.clockSeqAndNode, uuid.clockSeqAndNode, 8)) {
-
-            return ctx;
-        }
-
-        current = current->next;
-    }
-
-    return NULL;
-}
-
 ModuleContext *get_module_from_id(uint16_t id) {
     CTX_Node* current = ctx_head;
 
