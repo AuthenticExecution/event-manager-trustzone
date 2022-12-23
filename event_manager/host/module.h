@@ -10,7 +10,7 @@
 #define SECURITY_BYTES 16
 #define LOAD_HEADER_LEN 18
 #define OUTPUT_DATA_MAX_SIZE 1024 * 1024 // total size (for all concurrent outputs) in bytes
-#define MAX_CONCURRENT_OUTPUTS 8
+#define MAX_CONCURRENT_OUTPUTS 32
 
 // data structure containing all the required fields
 typedef struct {
