@@ -36,8 +36,8 @@ void send_outputs(
 
     int pl_offset = 0;
     for(int i = 0; i < num_outputs; i++) {
-        uint16_t conn_id = *((uint16_t *) conn_ids + 2 * i);
-        uint32_t cipher_len = *((uint32_t *) payloads + pl_offset);
+        uint16_t conn_id = *((uint16_t *) (conn_ids + 2 * i));
+        uint32_t cipher_len = *((uint32_t *) (payloads + pl_offset));
 
         // call handle_output
         reactive_handle_output(conn_id, payloads + pl_offset + 4, cipher_len + SECURITY_BYTES);
