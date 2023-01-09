@@ -104,13 +104,14 @@ ResultMessage load_module(unsigned char* buf, unsigned int size) {
         return RESULT(ResultCode_IllegalPayload);
     }
 
+    // here 100 is an overapproximation, since snprintf will write much less bytes
     char fname[100] = { 0 };
     FILE *file = NULL;
     char path[] = "/lib/optee_armtz";
 
     snprintf(
         fname,
-        PATH_MAX,
+        100,
         "%s/%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x.ta",
         path,
         ctx.uuid.timeLow,
