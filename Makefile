@@ -1,6 +1,8 @@
 REPO          ?= authexec/event-manager-trustzone
 TAG           ?= latest
 OPTEE_DIR     ?= /opt/optee
+IMX_DIR       ?= imx
+PACKAGE       ?= optee-examples
 
 build:
 	docker build -t $(REPO):$(TAG) .
@@ -19,3 +21,16 @@ login:
 
 check_port:
 	@test $(PORT) || (echo "PORT variable not defined. Run make <target> PORT=<port>" && return 1)
+
+imx_setup:
+	./imx_setup.sh $(IMX_DIR)
+
+imx_build:
+	make -C $(IMX_DIR)/output BR2_JLEVEL="$(nproc)" all
+
+imx_rebuild:
+	make -C $(IMX_DIR)/output $(PACKAGE)-dirclean
+	make -C $(IMX_DIR)/output BR2_JLEVEL="$(nproc)" $(PACKAGE)-rebuild all
+
+clean:
+	rm -rf imx
