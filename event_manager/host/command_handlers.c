@@ -8,6 +8,7 @@
 #include "utils.h"
 #include "logging.h"
 #include "enclave_utils.h"
+#include "module.h"
 
 ResultMessage handler_add_connection(CommandMessage m) {
   Connection connection;
@@ -111,9 +112,15 @@ ResultMessage handler_load_sm(CommandMessage m) {
   return load_enclave(m);
 }
 
-ResultMessage handler_ping(CommandMessage m) {
+ResultMessage handler_reset(CommandMessage m) {
+  //clear all modules
+  delete_modules();
+  //clear all connections
+  delete_connections();
+
   return RESULT(ResultCode_Ok);
 }
+
 
 ResultMessage handler_register_entrypoint(CommandMessage m) {
   WARNING("Periodic events disabled");
