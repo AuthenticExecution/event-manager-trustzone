@@ -95,3 +95,42 @@ nameserver 8.8.8.8
 ```
 
 3. Run `ifup eth0`
+
+### Synchronize time
+
+Note: this solution attempts at synchronizing the time with sub-second resolution, but it is not guaranteed to work. The problem is that the `date` command in the ARM board only accepts Unix timestamps (seconds since Epoch). Therefore, the below solution attempts at synchronizing the time when the number of microseconds in the local server reaches zero.
+
+The script accounts for network delay. Just update `NETWORK_DELAY` accordingly (value is in seconds)
+
+**Local server `server.py`**
+
+Run this server in the Linux machine connected to the ARM board.
+
+```python
+from flask import Flask
+from datetime import datetime
+import time
+
+NETWORK_DELAY = 0.005
+app = Flask("time-server")
+
+@app.route("/")
+def hello_world():
+    timestamp = datetime.now().timestamp()
+    remaining = 1 - (timestamp % 1) - NETWORK_DELAY
+    #print(f"ts: {timestamp} remaining: {remaining}")
+    time.sleep(remaining)
+    return str(int(timestamp + 1))
+
+app.run("0.0.0.0")
+```
+
+```bash
+python server.py
+```
+
+**ARM board: (note: use IP address of server above)**
+
+```bash
+date -s @`wget -qO-  134.58.46.188:5000`
+```
