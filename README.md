@@ -96,13 +96,30 @@ nameserver 8.8.8.8
 
 3. Run `ifup eth0`
 
+### Interact with NW/SW through UART
+
+```bash
+# open a screen session with the NW (interactive - can use terminal)
+screen /dev/ttyUSB1 115200
+
+# open a screen session with the SW (non interactive - only logs)
+screen /dev/ttyUSB0 115200
+
+# alternatively: open detached screen sessions
+screen -L -Logfile nw.txt -dmS tz-nw /dev/ttyUSB1 115200
+screen -L -Logfile sw.txt -dmS tz-sw /dev/ttyUSB0 115200
+
+# attach screen session
+screen -r tz-sw
+```
+
 ### Synchronize time
 
 Note: this solution attempts at synchronizing the time with sub-second resolution, but it is not guaranteed to work. The problem is that the `date` command in the ARM board only accepts Unix timestamps (seconds since Epoch). Therefore, the below solution attempts at synchronizing the time when the number of microseconds in the local server reaches zero.
 
 The script accounts for network delay. Just update `NETWORK_DELAY` accordingly (value is in seconds)
 
-**Local server `server.py`**
+**Local server `time-sync.py`**
 
 Run this server in the Linux machine connected to the ARM board.
 
@@ -126,7 +143,7 @@ app.run("0.0.0.0")
 ```
 
 ```bash
-python server.py
+python time-sync.py
 ```
 
 **ARM board: (note: use IP address of server above)**
