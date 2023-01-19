@@ -6,7 +6,7 @@ PACKAGE       ?= optee-examples
 
 NW_DEVICE     ?= /dev/ttyUSB1
 SW_DEVICE     ?= /dev/ttyUSB0
-TIME_HOST     ?= 134.58.46.188:55555
+PORT          ?= 1236
 
 build:
 	docker build -t $(REPO):$(TAG) .
@@ -21,10 +21,10 @@ run_qemu: check_port
 	docker run --rm -v $(OPTEE_DIR):/opt/optee -e PORT=$(PORT) -p $(PORT):1236 --name event-manager-$(PORT) $(REPO):$(TAG)
 
 init_imx:
-	scripts/init-imx.sh $(NW_DEVICE) $(TIME_HOST)
+	scripts/init-imx.sh $(NW_DEVICE) $(SW_DEVICE)
 
 run_imx:
-	docker run --rm -e IMX=1 --device=$(NW_DEVICE):/dev/NW --device=$(SW_DEVICE):/dev/SW -d --name event-manager-imx authexec/event-manager-trustzone
+	docker run --rm -e IMX=1 -e PORT=$(PORT) --device=$(NW_DEVICE):/dev/NW --device=$(SW_DEVICE):/dev/SW -d --name event-manager-imx authexec/event-manager-trustzone
 
 login:
 	docker login

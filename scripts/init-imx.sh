@@ -3,33 +3,37 @@
 set -e
 
 NW=$1
-HOST=$2
+SW=$2
 FILE=tz.txt
 
 echo "" > $FILE
 
-echo "Opening screen session"
+echo "Opening screen sessions"
 screen -L -Logfile $FILE -dmS tz-nw $NW 115200
 screen -r tz-nw -X colon "logfile flush 0.001^M"
+screen -L -Logfile $FILE -dmS tz-sw $SW 115200
+screen -r tz-sw -X colon "logfile flush 0.001^M"
 sleep 0.5
 
-read -p "Unplug power and ethernet, wait 2 seconds, plug power. Press Enter to continue"
+echo "Rebooting board"
+screen -S tz-nw -p 0 -X stuff "root^M"
+screen -S tz-nw -p 0 -X stuff "^Creboot^M"
+screen -S tz-sw -p 0 -X stuff "^Creset^M"
 
 echo "Wait until the board boots up.."
 until cat $FILE | grep 'buildroot login:' ; do sleep 1; done
 echo "Logging in.."
 screen -S tz-nw -p 0 -X stuff "root^M"
-
-read -p "Plug the ethernet cable and press Enter to continue"
-sleep 2
+sleep 0.5
 
 echo "Synchronizing time.."
-python3 scripts/time-sync.py &
+TIMESTAMP=$(python3 scripts/time-sync.py)
+screen -S tz-nw -p 0 -X stuff "^Cdate -s @$TIMESTAMP^M"
 sleep 0.5
-screen -S tz-nw -p 0 -X stuff "^Cdate -s @`wget -qO- $HOST`^M"
-sleep 0.5
-kill %1
-sleep 0.5
+
+echo "Closing sessions"
+screen -X -S tz-nw quit
+screen -X -S tz-sw quit
 
 cat $FILE
 rm -rf $FILE

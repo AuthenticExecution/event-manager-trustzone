@@ -106,8 +106,8 @@ Precondition: board is up and running and networking is configured (check above)
 make run_imx NW_DEVICE=<nw_uart> SW_DEVICE=<sw_uart>
 ```
 
-The container automatically synchronizes the time with the host and runs the
-Event Manager.
+The container automatically sets up the board in a clean state, doing a full
+reset and a time synchronization, and finally running the event manager.
 
 ### Interact with NW/SW through UART
 
@@ -123,44 +123,56 @@ screen -L -Logfile nw.txt -dmS tz-nw /dev/ttyUSB1 115200
 screen -L -Logfile sw.txt -dmS tz-sw /dev/ttyUSB0 115200
 
 # attach screen session
-screen -r tz-sw
+screen -r tz-nw
+
+# execute command remotely
+# ^C is the CTRL-C command, while ^M is the Enter command
+screen -S tz-nw -p 0 -X stuff "^Cecho hello^M"
+
+# close screen session
+screen -X -S tz-nw quit
 ```
 
 ### Synchronize time
 
-Note: this solution attempts at synchronizing the time with sub-second resolution, but it is not guaranteed to work. The problem is that the `date` command in the ARM board only accepts Unix timestamps (seconds since Epoch). Therefore, the below solution attempts at synchronizing the time when the number of microseconds in the local server reaches zero.
+Note: this solution attempts at synchronizing the time with sub-second
+resolution, but it is not guaranteed to work. The problem is that the `date`
+command in the ARM board only accepts Unix timestamps (seconds since Epoch).
+Therefore, the below solution attempts at synchronizing the time when the number
+of microseconds in the local host reaches zero.
 
-The script accounts for network delay. Just update `NETWORK_DELAY` accordingly (value is in seconds)
-
-**Local server `scripts/time-sync.py`**
-
-Run this server in the Linux machine connected to the ARM board.
-
-```python
-from flask import Flask
-from datetime import datetime
-import time
-
-NETWORK_DELAY = 0.005
-app = Flask("time-server")
-
-@app.route("/")
-def hello_world():
-    timestamp = datetime.now().timestamp()
-    remaining = 1 - (timestamp % 1) - NETWORK_DELAY
-    #print(f"ts: {timestamp} remaining: {remaining}")
-    time.sleep(remaining)
-    return str(int(timestamp + 1))
-
-app.run(host="0.0.0.0", port=55555)
-```
+The script accounts for UART transmission delay. Just update `NETWORK_DELAY`
+accordingly (value is in seconds).
 
 ```bash
-python scripts/time-sync.py
+# open detached screen session to the normal world
+screen -L -Logfile log.txt -dmS tz-nw /dev/ttyUSB1 115200
+
+# calculate timestamp, accounting for network delay
+TIMESTAMP=$(python3 scripts/time-sync.py)
+
+# set timestamp on board
+screen -S tz-nw -p 0 -X stuff "^Cdate -s @$TIMESTAMP^M"
+
+# close screen session
+screen -X -S tz-nw quit
 ```
 
-**ARM board: (note: use IP address of server above)**
+### Initialize board
+
+The target `init_imx` automatically initializes the board, doing a reboot and
+synchronizing the time with the host.
 
 ```bash
-date -s @`wget -qO-  134.58.46.188:55555`
+make init_imx
+```
+
+### Run event manager
+
+Precondition: board is initialized and network is configured
+
+After opening a screen session with the normal world:
+```bash
+# <port>: port the EM listens to. Default is 1236
+optee_event_manager <port>
 ```

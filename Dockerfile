@@ -66,9 +66,6 @@ RUN apt-get update \
 
 WORKDIR /build
 
-COPY scripts/requirements.txt .
-RUN python3 -m pip install -r requirements.txt
-
 COPY soc_term.c .
 RUN gcc -o /bin/soc_term soc_term.c
 
