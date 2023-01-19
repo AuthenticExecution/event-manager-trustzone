@@ -139,7 +139,7 @@ def hello_world():
     time.sleep(remaining)
     return str(int(timestamp + 1))
 
-app.run("0.0.0.0")
+app.run(host="0.0.0.0", port=55555)
 ```
 
 ```bash
@@ -149,5 +149,5 @@ python time-sync.py
 **ARM board: (note: use IP address of server above)**
 
 ```bash
-date -s @`wget -qO-  134.58.46.188:5000`
+date -s @`wget -qO-  134.58.46.188:55555`
 ```
