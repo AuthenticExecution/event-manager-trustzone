@@ -25,11 +25,11 @@ make -j2 toolchains
 make -j `nproc`
 ```
 
-### Run a OPTEE instance using Docker
+### Run a OPTEE instance using QEMU with Docker
 
 ```bash
 ### <volume>: absolute path of the root folder created in the previous phase (default: /opt/optee)
-make run PORT=<port> OPTEE_DIR=<volume>
+make run_qemu PORT=<port> OPTEE_DIR=<volume>
 ```
 
 The container automatically runs the Event Manager at startup.
@@ -96,6 +96,19 @@ nameserver 8.8.8.8
 
 3. Run `ifup eth0`
 
+### Run a OPTEE instance using i.MX6 with Docker
+
+Precondition: board is up and running and networking is configured (check above).
+
+```bash
+### <nw_uart>: UART device of the normal world
+### <sw_uart>: UART device of the secure world
+make run_imx NW_DEVICE=<nw_uart> SW_DEVICE=<sw_uart>
+```
+
+The container automatically synchronizes the time with the host and runs the
+Event Manager.
+
 ### Interact with NW/SW through UART
 
 ```bash
@@ -119,7 +132,7 @@ Note: this solution attempts at synchronizing the time with sub-second resolutio
 
 The script accounts for network delay. Just update `NETWORK_DELAY` accordingly (value is in seconds)
 
-**Local server `time-sync.py`**
+**Local server `scripts/time-sync.py`**
 
 Run this server in the Linux machine connected to the ARM board.
 
@@ -143,7 +156,7 @@ app.run(host="0.0.0.0", port=55555)
 ```
 
 ```bash
-python time-sync.py
+python scripts/time-sync.py
 ```
 
 **ARM board: (note: use IP address of server above)**

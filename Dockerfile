@@ -5,6 +5,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends tzdata \
     && ln -fs /usr/share/zoneinfo/Europe/Brussels /etc/localtime \
     && dpkg-reconfigure --frontend noninteractive tzdata
 
+# QEMU
 RUN dpkg --add-architecture i386 \
     && apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -56,10 +57,22 @@ RUN dpkg --add-architecture i386 \
     zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /opt/optee
+# IMX
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+    python3-pip \
+    screen \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+
+COPY scripts/requirements.txt .
+RUN python3 -m pip install -r requirements.txt
 
 COPY soc_term.c .
 RUN gcc -o /bin/soc_term soc_term.c
 
-COPY run.py /
-CMD ["python3", "/run.py"]
+WORKDIR /opt/optee
+
+COPY scripts/run_qemu.py scripts/run.sh scripts/time-sync.py /
+CMD ["/run.sh"]
